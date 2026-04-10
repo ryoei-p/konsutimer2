@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コンスタイマー</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="shortcut icon" href="konchan1.png" type="image/x-icon">
+</head>
+<body>
+
+  <!-- 終了エフェクト -->
+  <canvas id="confetti-canvas"></canvas>
+  <div id="flash"></div>
+  <div id="end-banner">終了です！🎉</div>
+
+  <!-- テーマパネル -->
+  <div id="overlay"></div>
+  <div id="theme-panel">
+    <button id="panel-close">×</button>
+    <h2>テーマカラー</h2>
+    <div id="theme-list"></div>
+  </div>
+
+  <!-- テーマボタン（左上固定） -->
+  <button id="theme-btn" title="テーマ変更">🎨</button>
+
+  <!-- メインレイアウト -->
+  <main>
+
+    <!-- タイマー列 -->
+    <div id="timer-col">
+      <div id="select-wrap">
+        <select id="min-select"></select>
+        <span class="select-unit">分</span>
+      </div>
+
+      <div id="clock">05:00</div>
+      <div id="prog-track"><div id="prog-fill"></div></div>
+      <div id="status"></div>
+
+      <div id="ctrl-row">
+        <button class="ctrl primary" id="start-btn">スタート</button>
+        <button class="ctrl hidden"  id="stop-btn">一時停止</button>
+        <button class="ctrl hidden"  id="reset-btn">リセット</button>
+      </div>
+    </div>
+
+    <div id="divider"></div>
+
+    <!-- メモ列 -->
+    <div id="memo-col">
+
+      <!-- シートタブ（Excelスタイル） -->
+      <div id="tab-bar">
+        <div id="tab-list"></div>
+        <button id="tab-overflow-btn" title="他のシート">
+          ···
+          <div id="overflow-menu"></div>
+        </button>
+        <button id="tab-add" title="シートを追加">＋</button>
+      </div>
+
+      <!-- 書式ツールバー -->
+      <div id="toolbar">
+        <div class="tb-group">
+          <button class="fmt-btn" id="fmt-bold"      title="太文字 (Ctrl+B)"><b>B</b></button>
+          <button class="fmt-btn" id="fmt-underline" title="下線 (Ctrl+U)"><u>U</u></button>
+        </div>
+        <div class="tb-sep"></div>
+        <span id="char-count"></span>
+        <button id="clear-btn">クリア</button>
+      </div>
+
+      <!-- メモ本体 -->
+      <div id="memo"
+           contenteditable="true"
+           spellcheck="false"
+           data-placeholder="グループワークの指示・アジェンダなど自由に記入できます">
+      </div>
+    </div>
+
+  </main>
+
+  <script src="themacolor.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

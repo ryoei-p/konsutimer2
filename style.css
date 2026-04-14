@@ -226,10 +226,8 @@ main {
   height: 90px;
   z-index: 10;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.6s ease;
+  opacity: 1;   /* 常時表示 */
 }
-#mascot-corner.running { opacity: 1; }
 #mascot-corner .mascot-slide {
   position: absolute;
   inset: 0;

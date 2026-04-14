@@ -381,22 +381,24 @@ function autoSave() {
   saveSheets();
 }
 
-/* ─── マスコットアニメーション（タイマー動作中のみ） ─── */
-const mascotCorner  = document.getElementById('mascot-corner');
-const mascotSlides  = mascotCorner ? Array.from(mascotCorner.querySelectorAll('.mascot-slide')) : [];
-let mascotIdx       = 0;
-let mascotTimer     = null;
-
-// タイマー動作中の3枚（finish除く）
-const mascotRunSlides = mascotSlides.filter(s => s.id !== 'mascot-finish');
+/* ─── マスコットアニメーション ─── */
+const mascotCorner    = document.getElementById('mascot-corner');
+const mascotSlides    = mascotCorner ? Array.from(mascotCorner.querySelectorAll('.mascot-slide')) : [];
+const mascotDefault   = document.getElementById('mascot-default');
 const mascotFinishImg = document.getElementById('mascot-finish');
+// タイマー動作中の3枚（default・finish除く）
+const mascotRunSlides = mascotSlides.filter(s => s.id !== 'mascot-finish' && s.id !== 'mascot-default');
+let mascotIdx  = 0;
+let mascotTimer= null;
+
+function showMascotDefault() {
+  mascotSlides.forEach(s => s.classList.remove('active'));
+  if (mascotDefault) mascotDefault.classList.add('active');
+}
 
 function startMascotAnim() {
   if (!mascotCorner) return;
-  // finishを非表示にして通常アニメ開始
-  if (mascotFinishImg) mascotFinishImg.classList.remove('active');
-  mascotCorner.classList.add('running');
-  mascotRunSlides.forEach(s => s.classList.remove('active'));
+  mascotSlides.forEach(s => s.classList.remove('active'));
   mascotIdx = 0;
   mascotRunSlides[0].classList.add('active');
   if (mascotTimer) clearInterval(mascotTimer);
@@ -408,7 +410,6 @@ function startMascotAnim() {
 }
 
 function pauseMascotAnim() {
-  // 一時停止中はアニメーションを止めるだけ（表示は維持）
   clearInterval(mascotTimer);
   mascotTimer = null;
 }
@@ -417,19 +418,14 @@ function showMascotFinish() {
   if (!mascotCorner) return;
   clearInterval(mascotTimer);
   mascotTimer = null;
-  // 通常スライドを非表示にしてfinishを表示
   mascotRunSlides.forEach(s => s.classList.remove('active'));
   if (mascotFinishImg) mascotFinishImg.classList.add('active');
-  mascotCorner.classList.add('running');
 }
 
 function stopMascotAnim() {
-  if (!mascotCorner) return;
   clearInterval(mascotTimer);
   mascotTimer = null;
-  mascotRunSlides.forEach(s => s.classList.remove('active'));
-  if (mascotFinishImg) mascotFinishImg.classList.remove('active');
-  mascotCorner.classList.remove('running');
+  showMascotDefault();
 }
 
 /* ─── 初期表示 ─── */

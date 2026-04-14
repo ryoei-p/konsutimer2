@@ -258,7 +258,7 @@ fmtUnderline.addEventListener('click', () => {
 memo.addEventListener('keyup',   updateActiveStates);
 memo.addEventListener('mouseup', updateActiveStates);
 
-/* ── フォントサイズ（小・中・大） ── */
+/* ── フォントサイズ（小28px・中34px・大44px） ── */
 document.querySelectorAll('.size-btn').forEach(btn => {
   btn.addEventListener('mousedown', e => e.preventDefault());
   btn.addEventListener('click', () => {
@@ -266,39 +266,25 @@ document.querySelectorAll('.size-btn').forEach(btn => {
     const sel  = window.getSelection();
 
     if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-      // 選択範囲あり → 既存のfont-sizeを全て除去してから新しいspanを適用
       const range = sel.getRangeAt(0);
-      // 選択範囲内の既存font-size spanを解除
-      const frag = range.cloneContents();
-      const walker = document.createTreeWalker(frag, NodeFilter.SHOW_ELEMENT);
-      let node;
-      while ((node = walker.nextNode())) {
-        if (node.style && node.style.fontSize) node.style.fontSize = '';
-      }
-      // 新しいspanで包む
-      const span = document.createElement('span');
+      const span  = document.createElement('span');
       span.style.fontSize = size;
       try {
         range.surroundContents(span);
       } catch(e) {
         const extracted = range.extractContents();
-        // extracted内のfont-size除去
-        extracted.querySelectorAll('[style]').forEach(el => {
-          el.style.fontSize = '';
-        });
+        extracted.querySelectorAll('[style]').forEach(el => { el.style.fontSize = ''; });
         span.appendChild(extracted);
         range.insertNode(span);
       }
-      // 選択を新しいspanに合わせる
       const newR = document.createRange();
       newR.selectNodeContents(span);
       sel.removeAllRanges();
       sel.addRange(newR);
     } else {
-      // 選択なし → カーソル位置にゼロ幅spanを挿入（以降の入力に適用）
       const span = document.createElement('span');
       span.style.fontSize = size;
-      span.innerHTML = '​'; // ゼロ幅スペース
+      span.innerHTML = '​';
       if (sel && sel.rangeCount > 0) {
         const range = sel.getRangeAt(0);
         range.insertNode(span);
@@ -306,7 +292,6 @@ document.querySelectorAll('.size-btn').forEach(btn => {
         sel.removeAllRanges(); sel.addRange(range);
       }
     }
-
     document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     autoSave();

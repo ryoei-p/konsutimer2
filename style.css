@@ -57,14 +57,21 @@ body {
   position: fixed; top: 0; left: -290px;
   width: 268px; height: 100vh;
   background: var(--surface); border-right: 1px solid var(--border);
-  padding: 22px 18px;
+  padding: 22px 18px 32px;
   transition: left 0.3s cubic-bezier(.4,0,.2,1); z-index: 301;
+  display: flex; flex-direction: column;
 }
 #theme-panel.open { left: 0; }
 #theme-panel h2 {
   font-size: 11px; font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--sub); margin-bottom: 14px; margin-top: 36px;
+  color: var(--sub); margin-bottom: 6px; margin-top: 36px;
+  flex-shrink: 0;
+}
+#theme-list {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 2px;
 }
 
 #panel-close {
@@ -93,14 +100,42 @@ main {
   grid-template-columns: 420px 1px 1fr;
   overflow: hidden;
   padding-top: 0;
+  min-height: 0; /* flexの子でoverflowが効くために必要 */
 }
+
+/* 幅が狭い場合（二画面表示など）：縦並びに切り替え */
+@media (max-width: 800px) {
+  main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1px 1fr;
+    overflow-y: auto;
+  }
+  #divider {
+    width: 100%;
+    height: 1px;
+  }
+  #timer-col {
+    padding: 24px 20px;
+  }
+  #memo-col {
+    min-height: 400px;
+  }
+  body {
+    overflow: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+}
+
 #divider { background: var(--border); }
 
 /* ===== タイマー列 ===== */
 #timer-col {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  padding: 36px 40px; gap: 0;
+  padding: 36px 40px 24px; gap: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 /* 各要素に固定marginで位置を固定しレイアウトシフトを防ぐ */
 #select-wrap  { margin-bottom: 20px; }
@@ -108,6 +143,8 @@ main {
 #prog-track   { margin-bottom: 20px; }
 #status       { margin-bottom: 20px; }
 #ctrl-row     { margin-bottom: 0; }
+
+
 
 /* ドロップダウン */
 #select-wrap { display: flex; align-items: center; gap: 12px; }
@@ -180,6 +217,29 @@ main {
 .ctrl.primary:hover { background: var(--accent-d); border-color: var(--accent-d); }
 .hidden { display: none !important; }
 
+/* ===== 左下コーナーマスコット ===== */
+#mascot-corner {
+  position: fixed;
+  bottom: 8px;
+  left: 20px;
+  width: 90px;
+  height: 90px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+#mascot-corner.running { opacity: 1; }
+#mascot-corner .mascot-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+#mascot-corner .mascot-slide.active { opacity: 1; }
+
 /* ===== 終了エフェクト ===== */
 #confetti-canvas {
   position: fixed; inset: 0;
@@ -204,6 +264,7 @@ main {
   font-size: 40px; font-weight: 500; letter-spacing: 2px;
   pointer-events: none; z-index: 51; opacity: 0;
   box-shadow: 0 12px 48px rgba(214,48,48,0.45);
+  white-space: nowrap; /* 幅が狭くても改行させない */
 }
 #end-banner.pop  { animation: banner-pop  0.55s cubic-bezier(.34,1.56,.64,1) forwards; }
 #end-banner.hide { animation: banner-hide 0.4s ease-in forwards; }
@@ -214,6 +275,8 @@ main {
 #memo-col {
   display: flex; flex-direction: column;
   padding: 16px 24px 20px 20px; gap: 10px;
+  min-height: 0; /* flex内でスクロール有効化 */
+  overflow: hidden;
 }
 
 /* ─ ツールバー ─ */
@@ -222,8 +285,9 @@ main {
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 6px 10px;
-  flex-wrap: wrap;
+  padding: 5px 10px;
+  flex-wrap: nowrap;   /* 折り返し禁止 */
+  overflow: visible;   /* ドロップダウンが見えるように */
 }
 
 .tb-group { display: flex; align-items: center; gap: 4px; }
@@ -244,15 +308,82 @@ main {
 #toolbar select:focus { border-color: var(--accent); }
 
 .fmt-btn {
-  width: 30px; height: 28px;
+  min-width: 28px; height: 26px;
+  padding: 0 5px;
   border: 1px solid var(--border); border-radius: 6px;
   background: transparent; color: var(--text);
-  font-size: 14px; cursor: pointer;
+  font-size: 13px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.12s;
+  white-space: nowrap; flex-shrink: 0;
 }
-.fmt-btn:hover   { background: var(--border); }
-.fmt-btn.active  { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fmt-btn:hover  { background: var(--border); }
+.fmt-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* サイズボタン */
+.size-btn { font-size: 12px; font-weight: 600; }
+
+/* 色・蛍光ペンボタン（パレット内） */
+.color-btn {
+  width: 20px; height: 20px;
+  border-radius: 3px;
+  border: 1.5px solid rgba(0,0,0,0.15);
+  cursor: pointer; flex-shrink: 0;
+  transition: transform 0.1s, box-shadow 0.1s;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.color-btn:hover  { transform: scale(1.15); }
+.color-btn.active { box-shadow: 0 0 0 2.5px var(--accent); }
+
+/* ドロップダウントリガーボタン */
+.dd-trigger {
+  gap: 3px; padding: 0 6px;
+  font-size: 12px;
+}
+
+/* 選択色を示すバー */
+.dd-bar {
+  display: inline-block;
+  width: 16px; height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* 蛍光アイコン */
+.hl-icon { font-size: 11px; }
+
+/* ドロップダウンコンテナ */
+.tb-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ドロップダウンパネル */
+.dd-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  z-index: 400;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  min-width: max-content;
+}
+.dd-panel.open { display: block; }
+
+/* 色グリッド（2行4列） */
+.dd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  gap: 5px;
+}
+
+
 
 /* カラーピッカーラベル */
 .color-label {
@@ -285,16 +416,17 @@ main {
 /* ─ メモ本体（contenteditable） ─ */
 #memo {
   flex: 1;
+  min-height: 0;        /* flex子要素でスクロールを有効にする */
   border: 1.5px solid var(--border); border-radius: 14px;
   background: var(--memo-bg);
   background-image: url('konchan2.png');
-  background-repeat: no-repeat; background-size: 32%; background-position: center center;
+  background-repeat: no-repeat; background-size: 28%; background-position: center center;
   color: #000000;
   padding: 18px 20px;
   overflow-y: auto;
   outline: none;
   font-family: 'MS PGothic', 'ＭＳ Ｐゴシック', sans-serif;
-  font-size: 28px; line-height: 1.6;
+  font-size: 28px; line-height: 1.2;
   transition: border-color 0.2s, box-shadow 0.2s;
   word-break: break-word;
 }

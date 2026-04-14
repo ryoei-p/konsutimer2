@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>コンスタイマー</title>
+  <title>コンスタイマー2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -27,11 +27,20 @@
   <!-- テーマボタン（左上固定） -->
   <button id="theme-btn" title="テーマ変更">🎨</button>
 
+  <!-- 左下マスコット（タイマー動作中のみ表示） -->
+  <div id="mascot-corner">
+    <img src="konchan_kirakira.png" class="mascot-slide active" id="mascot-running" alt="">
+    <img src="konchan_hatena.png"   class="mascot-slide"        alt="">
+    <img src="konchan_idea.png"     class="mascot-slide"        alt="">
+    <img src="konchan_finish.png"   class="mascot-slide"        id="mascot-finish" alt="">
+  </div>
+
   <!-- メインレイアウト -->
   <main>
 
     <!-- タイマー列 -->
     <div id="timer-col">
+
       <div id="select-wrap">
         <select id="min-select"></select>
         <span class="select-unit">分</span>
@@ -63,16 +72,66 @@
         <button id="tab-add" title="シートを追加">＋</button>
       </div>
 
-      <!-- 書式ツールバー -->
+      <!-- 書式ツールバー（1行コンパクト版） -->
       <div id="toolbar">
+
+        <!-- B / U -->
         <div class="tb-group">
-          <button class="fmt-btn" id="fmt-bold"      title="太文字 (Ctrl+B)"><b>B</b></button>
-          <button class="fmt-btn" id="fmt-underline" title="下線 (Ctrl+U)"><u>U</u></button>
+          <button class="fmt-btn" id="fmt-bold"      title="太文字"><b>B</b></button>
+          <button class="fmt-btn" id="fmt-underline" title="下線"><u>U</u></button>
         </div>
         <div class="tb-sep"></div>
+
+        <!-- フォントサイズ -->
+        <div class="tb-group">
+          <span class="tb-label">フォント</span>
+          <button class="fmt-btn size-btn" data-size="28px" title="小">小</button>
+          <button class="fmt-btn size-btn" data-size="36px" title="中">中</button>
+          <button class="fmt-btn size-btn" data-size="44px" title="大">大</button>
+        </div>
+        <div class="tb-sep"></div>
+
+        <!-- 文字色ドロップダウン -->
+        <div class="tb-dropdown" id="color-dd">
+          <button class="fmt-btn dd-trigger" id="color-trigger" title="文字色">
+            A <span class="dd-bar" id="color-bar" style="background:#1c1a12"></span> ▾
+          </button>
+          <div class="dd-panel" id="color-panel">
+            <div class="dd-grid">
+              <button class="color-btn" data-color="#1c1a12" title="黒"      style="background:#1c1a12"></button>
+              <button class="color-btn" data-color="#d63030" title="赤"      style="background:#d63030"></button>
+              <button class="color-btn" data-color="#f07020" title="オレンジ" style="background:#f07020"></button>
+              <button class="color-btn" data-color="#c49a00" title="黄"      style="background:#c49a00"></button>
+              <button class="color-btn" data-color="#3a9e4a" title="緑"      style="background:#3a9e4a"></button>
+              <button class="color-btn" data-color="#3a8fd4" title="青"      style="background:#3a8fd4"></button>
+              <button class="color-btn" data-color="#8840c0" title="紫"      style="background:#8840c0"></button>
+              <button class="color-btn" data-color="#888780" title="グレー"  style="background:#888780"></button>
+            </div>
+          </div>
+        </div>
+        <div class="tb-sep"></div>
+
+        <!-- 蛍光ペンドロップダウン -->
+        <div class="tb-dropdown" id="hl-dd">
+          <button class="fmt-btn dd-trigger" id="hl-trigger" title="蛍光ペン">
+            <span class="hl-icon">蛍</span> <span class="dd-bar" id="hl-bar" style="background:#ffff00"></span> ▾
+          </button>
+          <div class="dd-panel" id="hl-panel">
+            <div class="dd-grid">
+              <button class="color-btn hl-btn" data-hl="#ffff00" title="黄"    style="background:#ffff00"></button>
+              <button class="color-btn hl-btn" data-hl="#90ee90" title="緑"    style="background:#90ee90"></button>
+              <button class="color-btn hl-btn" data-hl="#87cefa" title="青"    style="background:#87cefa"></button>
+              <button class="color-btn hl-btn" data-hl="#ffb6c1" title="ピンク" style="background:#ffb6c1"></button>
+              <button class="color-btn hl-btn hl-none" data-hl="transparent" title="解除" style="background:white;border:1.5px solid #ccc;color:#888;font-size:10px;">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="tb-sep"></div>
+
         <span id="char-count"></span>
         <button id="clear-btn">クリア</button>
       </div>
+
 
       <!-- メモ本体 -->
       <div id="memo"

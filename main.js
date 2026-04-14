@@ -69,6 +69,7 @@ startBtn.addEventListener('click', () => {
   stopBtn.classList.remove('hidden');
   resetBtn.classList.add('hidden');
 
+  startMascotAnim();
   intervalId = setInterval(() => {
     const remain = targetTime - Date.now();
     if (remain <= 0) {
@@ -83,6 +84,7 @@ startBtn.addEventListener('click', () => {
       stopBtn.classList.add('hidden');
       startBtn.classList.remove('hidden');
       resetBtn.classList.remove('hidden');
+      showMascotFinish();
       fireEndEffect();
     } else {
       restMs = remain;
@@ -104,6 +106,7 @@ startBtn.addEventListener('click', () => {
 /* ─── 一時停止 ─── */
 stopBtn.addEventListener('click', () => {
   clearInterval(intervalId); intervalId = null;
+  pauseMascotAnim();
   stopBtn.classList.add('hidden');
   startBtn.classList.remove('hidden');
   resetBtn.classList.remove('hidden');
@@ -114,6 +117,7 @@ stopBtn.addEventListener('click', () => {
 /* ─── リセット ─── */
 resetBtn.addEventListener('click', () => {
   clearInterval(intervalId); intervalId = null;
+  stopMascotAnim();
   stopConfetti();
   endBanner.classList.remove('pop', 'hide');
   restMs = null; totalMs = 0;
@@ -207,7 +211,32 @@ document.getElementById('clear-btn').addEventListener('click', () => {
   }
 });
 
-/* ── B / U ボタン ── */
+/* ── ドロップダウン開閉 ── */
+function setupDropdown(triggerId, panelId) {
+  const trigger = document.getElementById(triggerId);
+  const panel   = document.getElementById(panelId);
+  if (!trigger || !panel) return;
+  trigger.addEventListener('mousedown', e => e.preventDefault());
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // 他のパネルを閉じる
+    document.querySelectorAll('.dd-panel').forEach(p => {
+      if (p !== panel) p.classList.remove('open');
+    });
+    panel.classList.toggle('open');
+  });
+}
+
+setupDropdown('color-trigger', 'color-panel');
+setupDropdown('hl-trigger',    'hl-panel');
+setupDropdown('lh-trigger',    'lh-panel');
+
+// 外クリックで全パネルを閉じる
+document.addEventListener('click', () => {
+  document.querySelectorAll('.dd-panel').forEach(p => p.classList.remove('open'));
+});
+
+// ── B / U ── */
 const fmtBold      = document.getElementById('fmt-bold');
 const fmtUnderline = document.getElementById('fmt-underline');
 
@@ -216,26 +245,207 @@ function updateActiveStates() {
   fmtUnderline.classList.toggle('active', document.queryCommandState('underline'));
 }
 
+fmtBold.addEventListener('mousedown', e => e.preventDefault());
 fmtBold.addEventListener('click', () => {
-  memo.focus();
   document.execCommand('bold');
-  updateActiveStates();
-  const current = sheets.find(s => s.id === activeId);
-  if (current) current.html = memo.innerHTML;
-  saveSheets();
+  updateActiveStates(); autoSave();
 });
-
+fmtUnderline.addEventListener('mousedown', e => e.preventDefault());
 fmtUnderline.addEventListener('click', () => {
-  memo.focus();
   document.execCommand('underline');
-  updateActiveStates();
-  const current = sheets.find(s => s.id === activeId);
-  if (current) current.html = memo.innerHTML;
-  saveSheets();
+  updateActiveStates(); autoSave();
 });
-
 memo.addEventListener('keyup',   updateActiveStates);
 memo.addEventListener('mouseup', updateActiveStates);
+
+/* ── フォントサイズ（小・中・大） ── */
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault());
+  btn.addEventListener('click', () => {
+    const size = btn.dataset.size;
+    const sel  = window.getSelection();
+
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      // 選択範囲あり → 既存のfont-sizeを全て除去してから新しいspanを適用
+      const range = sel.getRangeAt(0);
+      // 選択範囲内の既存font-size spanを解除
+      const frag = range.cloneContents();
+      const walker = document.createTreeWalker(frag, NodeFilter.SHOW_ELEMENT);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.style && node.style.fontSize) node.style.fontSize = '';
+      }
+      // 新しいspanで包む
+      const span = document.createElement('span');
+      span.style.fontSize = size;
+      try {
+        range.surroundContents(span);
+      } catch(e) {
+        const extracted = range.extractContents();
+        // extracted内のfont-size除去
+        extracted.querySelectorAll('[style]').forEach(el => {
+          el.style.fontSize = '';
+        });
+        span.appendChild(extracted);
+        range.insertNode(span);
+      }
+      // 選択を新しいspanに合わせる
+      const newR = document.createRange();
+      newR.selectNodeContents(span);
+      sel.removeAllRanges();
+      sel.addRange(newR);
+    } else {
+      // 選択なし → カーソル位置にゼロ幅spanを挿入（以降の入力に適用）
+      const span = document.createElement('span');
+      span.style.fontSize = size;
+      span.innerHTML = '​'; // ゼロ幅スペース
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        range.insertNode(span);
+        range.setStartAfter(span); range.collapse(true);
+        sel.removeAllRanges(); sel.addRange(range);
+      }
+    }
+
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    autoSave();
+  });
+});
+
+/* ── 文字色 ── */
+document.querySelectorAll('.color-btn:not(.hl-btn)').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault());
+  btn.addEventListener('click', () => {
+    document.execCommand('foreColor', false, btn.dataset.color);
+    document.querySelectorAll('.color-btn:not(.hl-btn)').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // dd-bar（トリガーの色バー）を更新
+    const bar = document.getElementById('color-bar');
+    if (bar) bar.style.background = btn.dataset.color;
+    // パネルを閉じる
+    document.getElementById('color-panel')?.classList.remove('open');
+    autoSave();
+  });
+});
+
+/* ── 蛍光ペン ── */
+document.querySelectorAll('.hl-btn').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault());
+  btn.addEventListener('click', () => {
+    const color = btn.dataset.hl;
+    if (color === 'transparent') {
+      document.execCommand('hiliteColor', false, 'transparent');
+      document.execCommand('backColor',   false, 'transparent');
+    } else {
+      document.execCommand('hiliteColor', false, color);
+    }
+    document.querySelectorAll('.hl-btn').forEach(b => b.classList.remove('active'));
+    if (color !== 'transparent') {
+      btn.classList.add('active');
+      const bar = document.getElementById('hl-bar');
+      if (bar) bar.style.background = color;
+    }
+    document.getElementById('hl-panel')?.classList.remove('open');
+    autoSave();
+  });
+});
+
+/* ── スタイルをspanで適用するヘルパー ── */
+function applyInlineStyle(prop, value) {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  if (sel.isCollapsed) {
+    // カーソルのみ（選択なし）→ 以降の入力に適用するためdocument.execCommandを使う
+    // font-sizeは execCommand('fontSize') が使えないので span を挿入
+    const span = document.createElement('span');
+    span.style[prop === 'fontSize' ? 'fontSize' : prop] = value;
+    span.innerHTML = '&#8203;'; // ゼロ幅スペース
+    const range = sel.getRangeAt(0);
+    range.insertNode(span);
+    range.setStart(span, 1); range.collapse(true);
+    sel.removeAllRanges(); sel.addRange(range);
+  } else {
+    // 選択範囲に適用
+    const range = sel.getRangeAt(0);
+    const span  = document.createElement('span');
+    span.style[prop === 'fontSize' ? 'fontSize' : prop] = value;
+    try { range.surroundContents(span); } catch(e) {
+      // 複数ノードにまたがる場合はフラグメントで処理
+      const frag = range.extractContents();
+      span.appendChild(frag);
+      range.insertNode(span);
+    }
+    sel.removeAllRanges();
+    const newR = document.createRange();
+    newR.selectNodeContents(span);
+    sel.addRange(newR);
+  }
+}
+
+/* ── 行間：1.2固定 ── */
+memo.style.lineHeight = '1.2';
+
+/* ── 自動保存ヘルパー ── */
+function autoSave() {
+  const current = sheets.find(s => s.id === activeId);
+  if (current) {
+    current.html = memo.innerHTML;
+
+  }
+  saveSheets();
+}
+
+/* ─── マスコットアニメーション（タイマー動作中のみ） ─── */
+const mascotCorner  = document.getElementById('mascot-corner');
+const mascotSlides  = mascotCorner ? Array.from(mascotCorner.querySelectorAll('.mascot-slide')) : [];
+let mascotIdx       = 0;
+let mascotTimer     = null;
+
+// タイマー動作中の3枚（finish除く）
+const mascotRunSlides = mascotSlides.filter(s => s.id !== 'mascot-finish');
+const mascotFinishImg = document.getElementById('mascot-finish');
+
+function startMascotAnim() {
+  if (!mascotCorner) return;
+  // finishを非表示にして通常アニメ開始
+  if (mascotFinishImg) mascotFinishImg.classList.remove('active');
+  mascotCorner.classList.add('running');
+  mascotRunSlides.forEach(s => s.classList.remove('active'));
+  mascotIdx = 0;
+  mascotRunSlides[0].classList.add('active');
+  if (mascotTimer) clearInterval(mascotTimer);
+  mascotTimer = setInterval(() => {
+    mascotRunSlides[mascotIdx].classList.remove('active');
+    mascotIdx = (mascotIdx + 1) % mascotRunSlides.length;
+    mascotRunSlides[mascotIdx].classList.add('active');
+  }, 3000);
+}
+
+function pauseMascotAnim() {
+  // 一時停止中はアニメーションを止めるだけ（表示は維持）
+  clearInterval(mascotTimer);
+  mascotTimer = null;
+}
+
+function showMascotFinish() {
+  if (!mascotCorner) return;
+  clearInterval(mascotTimer);
+  mascotTimer = null;
+  // 通常スライドを非表示にしてfinishを表示
+  mascotRunSlides.forEach(s => s.classList.remove('active'));
+  if (mascotFinishImg) mascotFinishImg.classList.add('active');
+  mascotCorner.classList.add('running');
+}
+
+function stopMascotAnim() {
+  if (!mascotCorner) return;
+  clearInterval(mascotTimer);
+  mascotTimer = null;
+  mascotRunSlides.forEach(s => s.classList.remove('active'));
+  if (mascotFinishImg) mascotFinishImg.classList.remove('active');
+  mascotCorner.classList.remove('running');
+}
 
 /* ─── 初期表示 ─── */
 syncDisplay();
@@ -456,14 +666,16 @@ window.addEventListener('resize', () => requestAnimationFrame(updateOverflow));
 
 /* ── タブ切り替え ── */
 function switchTab(id) {
-  // 現在のメモを保存
   const current = sheets.find(s => s.id === activeId);
-  if (current) current.html = memo.innerHTML;
-
+  if (current) {
+    current.html = memo.innerHTML;
+    current.lineHeight = memo.style.lineHeight;
+  }
   activeId = id;
   const next = sheets.find(s => s.id === id);
   if (next) {
-    memo.innerHTML = next.html || '';
+    memo.innerHTML   = next.html || '';
+    memo.style.lineHeight = '1.2';
   }
   renderTabs();
   updateCharCount();
@@ -518,7 +730,10 @@ function updateCharCount() {
 /* ── 初期化 ── */
 loadSheets();
 const initSheet = sheets.find(s => s.id === activeId);
-if (initSheet) memo.innerHTML = initSheet.html || '';
+if (initSheet) {
+  memo.innerHTML = initSheet.html || '';
+  memo.style.lineHeight = '1.2';
+}
 renderTabs();
 updateCharCount();
 
